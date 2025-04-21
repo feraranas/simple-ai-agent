@@ -1,12 +1,23 @@
-## Run:
+# Simple AI Agent with 2 tools and an output validator
+
+## Obtain API Keys from:
+
+- OPENCHARGEMAP_API_KEY in https://openchargemap.org/site/profile/applications
+- MARKETSTACK_API_KEY = https://marketstack.com/dashboard 
+- OPENAI_API_KEY = https://platform.openai.com/settings/
+
+## Setup:
 - python -m .venv venv
+- source .venv/bin/activate
 - pip install -r requirements.txt
 
-#### run each module
+## Run:
 
 1. Execute agents & analysis: ```python main.py ev-charging-growth --months --symbol PPLT```
-2. Fetch EV Charging Status: ```python main.py fetch-ev-charger-growth --months 5```
-3. Fetch ETF Metal prices: ```python main.py fetch-etf-metal-prices --months 5 --symbol GLD``` 
+
+#### informative on the 2 tools the agent uses
+- Fetch EV Charging Status: ```python main.py fetch-ev-charger-growth --months 5```
+- Fetch ETF Metal prices: ```python main.py fetch-etf-metal-prices --months 5 --symbol GLD``` 
 
 
 ## Code Overview
@@ -34,11 +45,3 @@ ev-charging-growth-cli/
 ├── README.md
 └── .env  (not in repo - contains secrets)
 ```
-
-#### Obtain API Keys from:
-
-- OPENCHARGEMAP_API_KEY in https://openchargemap.org/site/profile/applications
-- MARKETSTACK_API_KEY = https://marketstack.com/dashboard 
-- OPENAI_API_KEY = https://platform.openai.com/settings/
-
-
