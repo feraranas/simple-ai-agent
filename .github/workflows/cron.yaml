@@ -25,7 +25,6 @@ jobs:
             pip install -r requirements.txt
         
         - name: Run EV Charging Growth correlation
-          working-directory: $  # Set working directory for this step
           run: |
             python -m main --months 5 --metals-etf PPLT
     
