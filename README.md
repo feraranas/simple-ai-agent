@@ -1,6 +1,6 @@
 ## Run:
-python -m .venv venv
-pip install -r requirements.txt
+- python -m .venv venv
+- pip install -r requirements.txt
 
 #### run each module
 
@@ -37,8 +37,8 @@ ev-charging-growth-cli/
 
 #### Obtain API Keys from:
 
-OPENCHARGEMAP_API_KEY in https://openchargemap.org/site/profile/applications
-MARKETSTACK_API_KEY = https://marketstack.com/dashboard 
-OPENAI_API_KEY = https://platform.openai.com/settings/
+- OPENCHARGEMAP_API_KEY in https://openchargemap.org/site/profile/applications
+- MARKETSTACK_API_KEY = https://marketstack.com/dashboard 
+- OPENAI_API_KEY = https://platform.openai.com/settings/
 
 
