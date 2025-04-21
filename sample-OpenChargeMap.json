@@ -1,0 +1,138 @@
+{
+    "DataProvider": {
+        "WebsiteURL": "http://openchargemap.org",
+        "Comments": null,
+        "DataProviderStatusType": {
+            "IsProviderEnabled": true,
+            "ID": 1,
+            "Title": "Manual Data Entry"
+        },
+        "IsRestrictedEdit": false,
+        "IsOpenDataLicensed": true,
+        "IsApprovedImport": true,
+        "License": "Licensed under Creative Commons Attribution 4.0 International (CC BY 4.0)",
+        "DateLastImported": null,
+        "ID": 1,
+        "Title": "Open Charge Map Contributors"
+    },
+    "OperatorInfo": {
+        "WebsiteURL": null,
+        "Comments": "For use when the operator of the equipment is a single business owner connected to the location and equipment is not part of a larger network",
+        "PhonePrimaryContact": null,
+        "PhoneSecondaryContact": null,
+        "IsPrivateIndividual": false,
+        "AddressInfo": null,
+        "BookingURL": null,
+        "ContactEmail": null,
+        "FaultReportEmail": null,
+        "IsRestrictedEdit": null,
+        "ID": 45,
+        "Title": "(Business Owner at Location)"
+    },
+    "UsageType": {
+        "IsPayAtLocation": false,
+        "IsMembershipRequired": true,
+        "IsAccessKeyRequired": true,
+        "ID": 4,
+        "Title": "Public - Membership Required"
+    },
+    "StatusType": {
+        "IsOperational": false,
+        "IsUserSelectable": true,
+        "ID": 150,
+        "Title": "Planned For Future Date"
+    },
+    "SubmissionStatus": {
+        "IsLive": true,
+        "ID": 200,
+        "Title": "Submission Published"
+    },
+    "UserComments": null,
+    "PercentageSimilarity": null,
+    "MediaItems": null,
+    "IsRecentlyVerified": true,
+    "DateLastVerified": "2025-04-20T19:04:00Z",
+    "ID": 311847,
+    "UUID": "02A64A0E-E91C-46C5-A4E2-75A21EC0F9AC",
+    "ParentChargePointID": null,
+    "DataProviderID": 1,
+    "DataProvidersReference": null,
+    "OperatorID": 45,
+    "OperatorsReference": null,
+    "UsageTypeID": 4,
+    "UsageCost": "",
+    "AddressInfo": {
+        "ID": 312236,
+        "Title": "E.S. El Cisne I",
+        "AddressLine1": "A2",
+        "AddressLine2": null,
+        "Town": "Zaragoza",
+        "StateOrProvince": null,
+        "Postcode": null,
+        "CountryID": 210,
+        "Country": {
+            "ISOCode": "ES",
+            "ContinentCode": "EU",
+            "ID": 210,
+            "Title": "Spain"
+        },
+        "Latitude": 41.625524864310904,
+        "Longitude": -1.0100208247432079,
+        "ContactTelephone1": null,
+        "ContactTelephone2": null,
+        "ContactEmail": null,
+        "AccessComments": null,
+        "RelatedURL": null,
+        "Distance": null,
+        "DistanceUnit": 0
+    },
+    "Connections": [
+        {
+            "ID": 600800,
+            "ConnectionTypeID": 33,
+            "ConnectionType": {
+                "FormalName": "IEC 62196-3 Configuration FF",
+                "IsDiscontinued": false,
+                "IsObsolete": false,
+                "ID": 33,
+                "Title": "CCS (Type 2)"
+            },
+            "Reference": null,
+            "StatusTypeID": 50,
+            "StatusType": {
+                "IsOperational": true,
+                "IsUserSelectable": true,
+                "ID": 50,
+                "Title": "Operational"
+            },
+            "LevelID": 3,
+            "Level": {
+                "Comments": "40KW and Higher",
+                "IsFastChargeCapable": true,
+                "ID": 3,
+                "Title": "Level 3:  High (Over 40kW)"
+            },
+            "Amps": 300,
+            "Voltage": 1000,
+            "PowerKW": 150,
+            "CurrentTypeID": 30,
+            "CurrentType": {
+                "Description": "Direct Current",
+                "ID": 30,
+                "Title": "DC"
+            },
+            "Quantity": 2,
+            "Comments": "DC charger allows charging one vehicle at 150kW, or two simultaneous charges at 75kW."
+        }
+    ],
+    "NumberOfPoints": 2,
+    "GeneralComments": "Station equipped with a boost battery. Max Power limited when charger battery is low of charge",
+    "DatePlanned": null,
+    "DateLastConfirmed": null,
+    "StatusTypeID": 150,
+    "DateLastStatusUpdate": "2025-04-20T19:04:00Z",
+    "MetadataValues": null,
+    "DataQualityLevel": 1,
+    "DateCreated": "2025-04-20T19:02:00Z",
+    "SubmissionStatusTypeID": 200
+}
