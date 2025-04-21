@@ -13,7 +13,7 @@
 
 ## Run:
 
-1. Execute agents & analysis: ```python main.py ev-charging-growth --months 5 --symbol PPLT```
+1. Execute agents & analysis: ```python main.py ev-charging-growth --months 5 --metals_etf PPLT```
 
 #### informative on the 2 tools the agent uses
 - Fetch EV Charging Status: ```python main.py fetch-ev-charger-growth --months 5```
