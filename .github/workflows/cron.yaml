@@ -1,33 +1,56 @@
+# Workflow Metadata
+# This names the workflow. It appears in the *ACTIONS TAB* 
 name: "Scheduled Cron Jobs"
 
+# Triggers
 on:
     schedule:
-        # runs every week at 08:00 UTC
-        - cron: "0 8 * * 1"
+        # runs daily at 12:00 UTC (6 AM Mexico City time)
+        - cron: "0 12 * * *"
+    # Allows us to manually trigger the workflow from gh UI
     workflow_dispatch: {}
 
+# Jobs
 jobs:
+    # Defines a job called 'run-ev-charging-growth'
     run-ev-charging-growth:
         runs-on: ubuntu-latest
+
+        # Permissions
         permissions:
+            # This grants 'the job' write access to the repo's contents
+            # needed to push updates to "data.csv"
             contents: write
+
+        # Steps — defines the actual CI/CD pipeline steps
+        # they execute in sequence
         steps:
+
+        # 1. This step clones the repo into the 'workflow runner' so that
+        #    our code is available to work with
         - uses: actions/checkout@v4
 
+        # 2. Installs and sets up Python 3.11 in the 'runner' environment
         - name: Set up Python
           uses: actions/setup-python@v4
           with:
             python-version: "3.11"
-        
+
+        # 3. Upgrades pip & installs the project's dependencies listed in req.txt
         - name: Install dependencies
           run: |
             python -m pip install --upgrade pip
             pip install -r requirements.txt
-        
+
+        # 4. Runs the custom Python Script
         - name: Run EV Charging Growth correlation
           run: |
             python main.py ev-charging-growth --months 5 --metals-etf PPLT
-    
+
+        # 5. Sets the 'Git identity' to match the Github Actions' Bot.
+        #     Stages data.csv
+        #     If changes are detected, it commits & pushes with the message:
+        #         "chore: update data.csv"
         - name: Commit and push
           run: |
             git config --global user.name "github-actions"
@@ -38,7 +61,9 @@ jobs:
                 git commit -m "chore: update data.csv"
                 git push
             )
-
+        
+        # These Environment Variables are passed as env variables into the python script.
+        # They come from the Repo's Github Secrets, which keeps sensitive data secure.
         env:
             OPENCHARGEMAP_API_KEY: ${{ secrets.OPENCHARGEMAP_API_KEY }}
             MARKETSTACK_API_KEY: ${{ secrets.MARKETSTACK_API_KEY }}
