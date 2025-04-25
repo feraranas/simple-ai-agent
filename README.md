@@ -1,5 +1,11 @@
 # Simple AI Agent with 2 tools and an output validator
 
+There's a cron job that runs daily 6am CST, it runs the agent which outputs the following correlation analysis between 2 markets: 1) ev charging stations, 2) etf of metals (gold, platinum, etc):
+
+<p align="center" width=250px>
+  <img src="https://github.com/feraranas/simple-ai-agent/blob/main/output.png" />
+</p>
+
 ## Obtain API Keys from:
 
 - OPENCHARGEMAP_API_KEY in https://openchargemap.org/site/profile/applications
