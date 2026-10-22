@@ -35,7 +35,8 @@ class EvChargingGrowthResult(BaseModel):
 
 def already_fetched_today(csv_path: Path, metals_etf: str) -> bool:
     '''Check if data for the specified ETF has already been fetched today.'''
-    today_str = date.today().isoformat()
+    # Rows are stamped with datetime.now(timezone.utc); compare against the UTC date too.
+    today_str = datetime.now(timezone.utc).date().isoformat()
 
     if not csv_path.exists():
         return False
