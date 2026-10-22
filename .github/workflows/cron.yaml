@@ -47,7 +47,11 @@ jobs:
           run: |
             python main.py ev-charging-growth --months 5 --metals-etf PPLT
 
-        # 5. Sets the 'Git identity' to match the Github Actions' Bot.
+        # 5. Refuses to commit a data.csv with malformed rows
+        - name: Check data.csv
+          run: python scripts/check_data_csv.py data.csv
+
+        # 6. Sets the 'Git identity' to match the Github Actions' Bot.
         #     Stages data.csv
         #     If changes are detected, it commits & pushes with the message:
         #         "chore: update data.csv"
