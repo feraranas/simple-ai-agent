@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# agentctl — drive the simple-ai-agent Typer CLI offline for verification.
+# Resolves its own real path, so it works via skills/, .cursor/skills/ or .claude/skills/.
+set -euo pipefail
+SELF="$(readlink -f "${BASH_SOURCE[0]}")"
+SKILL_DIR="$(cd "$(dirname "$SELF")/.." && pwd)"
+REPO="$(git -C "$SKILL_DIR" rev-parse --show-toplevel)"
+RUN_ID="${RUN_ID:-default}"
+STATE="${AGENT_VERIFY_STATE:-/tmp/verify-saa-$RUN_ID}"
+EVIDENCE="${AGENT_VERIFY_EVIDENCE:-$SKILL_DIR/evidence/$RUN_ID}"
+VENV="$STATE/venv"
+die(){ echo "agentctl: $*" >&2; exit 1; }
+
+launch() {
+  mkdir -p "$STATE"
+  [ -x "$VENV/bin/python" ] || python3 -m venv "$VENV"
+  "$VENV/bin/pip" install -q -r "$REPO/requirements.txt"
+  echo "READY state=$STATE python=$("$VENV/bin/python" --version)"
+}
+
+doctor() {
+  local ok=0
+  chk(){ if eval "$2" >/dev/null 2>&1; then echo "OK   $1"; else echo "FAIL $1"; ok=1; fi; }
+  chk "venv exists" "[ -x '$VENV/bin/python' ]"
+  chk "deps import (typer, pydantic_ai, httpx)" "'$VENV/bin/python' -c 'import typer, pydantic_ai, httpx'"
+  chk "offline shim present" "[ -f '$SKILL_DIR/scripts/offline/sitecustomize.py' ]"
+  chk "CLI help lists commands" "cli --help | grep -q fetch-ev-charger-growth"
+  echo "repo HEAD: $(git -C "$REPO" rev-parse --short HEAD)"
+  return $ok
+}
+
+# cli -- <main.py args>: dummy keys, offline shim, scratch STORAGE_FILE_PATH; never the real data.csv.
+cli() {
+  [ "${1:-}" = "--" ] && shift
+  (cd "$REPO" && env -i HOME="$HOME" PATH="$VENV/bin:/usr/bin:/bin" \
+     PYTHONPATH="$SKILL_DIR/scripts/offline" AGENT_VERIFY_NETLOG="$STATE/net.log" \
+     OPENCHARGEMAP_API_KEY=verify-dummy MARKETSTACK_API_KEY=verify-dummy OPENAI_API_KEY=verify-dummy \
+     STORAGE_FILE_PATH="$STATE/data.csv" "$VENV/bin/python" main.py "$@")
+}
+
+journey() {
+  local name="$1" E="$EVIDENCE/$1"; mkdir -p "$E"; : > "$STATE/net.log"
+  local before; before="$(sha256sum "$REPO/data.csv" | cut -c1-16)"
+  local args
+  case "$name" in
+    fetch-ev-charger-growth) args=(fetch-ev-charger-growth --months 5);;
+    fetch-etf-metal-prices)  args=(fetch-etf-metal-prices --symbol GLD --months 5);;
+    *) die "journeys: fetch-ev-charger-growth | fetch-etf-metal-prices";;
+  esac
+  echo "agentctl cli -- ${args[*]}" > "$E/command.txt"
+  set +e; cli -- "${args[@]}" >"$E/stdout.txt" 2>"$E/stderr.txt"; echo $? > "$E/exit-code.txt"; set -e
+  cp "$STATE/net.log" "$E/network.jsonl.txt"
+  local after; after="$(sha256sum "$REPO/data.csv" | cut -c1-16)"
+  echo "data.csv sha256 before=$before after=$after" > "$E/data-csv-unchanged.txt"
+  [ "$(cat "$E/exit-code.txt")" = 0 ] || die "$name exited non-zero; see $E"
+  [ "$before" = "$after" ] || die "repo data.csv changed"
+  ! grep -q '"status": 599' "$E/network.jsonl.txt" || die "unexpected network host attempted; see $E/network.jsonl.txt"
+  echo "PASS $name evidence=$E"
+}
+
+cleanup() {
+  [ -d "$STATE" ] || { echo "nothing to clean ($STATE)"; return 0; }
+  case "$STATE" in /tmp/verify-saa-*) rm -rf "$STATE";; *) die "refusing to rm $STATE";; esac
+  echo "removed $STATE; evidence kept at $EVIDENCE"
+}
+
+case "${1:-}" in
+  launch) launch;; doctor) doctor;; cleanup) cleanup;;
+  cli) shift; cli "$@";;
+  journey) journey "${2:-}";;
+  *) echo "usage: agentctl launch|doctor|cli -- <args>|journey <name>|cleanup  (env RUN_ID)"; exit 2;;
+esac

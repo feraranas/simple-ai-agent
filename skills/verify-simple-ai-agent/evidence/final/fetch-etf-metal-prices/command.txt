@@ -1,0 +1,1 @@
+agentctl cli -- fetch-etf-metal-prices --symbol GLD --months 5

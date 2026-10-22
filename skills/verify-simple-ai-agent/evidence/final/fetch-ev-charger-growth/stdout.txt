@@ -1,0 +1,11 @@
+2026-06
+Month: 4, Month Label: 2026-06
+2026-07
+Month: 3, Month Label: 2026-07
+2026-08
+Month: 2, Month Label: 2026-08
+2026-09
+Month: 1, Month Label: 2026-09
+2026-10
+Month: 0, Month Label: 2026-10
+Counts List: [10.0, 8.0, 6.0, 4.0, 2.0]
