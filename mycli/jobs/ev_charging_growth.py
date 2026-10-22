@@ -25,13 +25,6 @@ class EvChargingGrowthResult(BaseModel):
     metals_etf_symbol: str = Field(..., description="Symbol of the analyzed metals ETF")
     correlation: float = Field(..., description="Correlation coefficient between EV growth and metals price")
     recommendation: str = Field(..., description="Analysis-based recommendation")
-###
-# result = EvChargingGrowthResult(
-#    metals_etf_symbol="GLD",
-#    correlation=0.72,
-#    recommendation="Positive trend—consider a 10% overweight position."
-#)
-###
 
 def already_fetched_today(csv_path: Path, metals_etf: str) -> bool:
     '''Check if data for the specified ETF has already been fetched today.'''
