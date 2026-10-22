@@ -1,10 +1,8 @@
 import csv
-from datetime import datetime, date, timedelta, timezone
+from datetime import datetime, date, timezone
 from pathlib import Path
 from typing import List, Optional
-from collections import defaultdict
 
-import httpx
 from pydantic import BaseModel, Field, ConfigDict
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.openai import OpenAIModel
@@ -12,6 +10,8 @@ from pydantic_ai.providers.openai import OpenAIProvider
 from rich.console import Console
 from rich.panel import Panel
 
+from mycli.jobs.fetch_ev_charger_growth import fetch_ev_charger_growth as fetch_ev_charger_growth_counts
+from mycli.jobs.fetch_metal_prices import fetch_metals_prices_ind
 from settings import settings
 
 
@@ -75,50 +75,7 @@ async def fetch_ev_charger_growth(
     months: int
 ) -> List[float]:
     '''Fetch monthly EV charger creation counts from Open Charge Map (real API calls)'''
-    base_url = "https://api.openchargemap.io/v3/poi"
-    days_ago = months * 30
-    since_date = (datetime.now(timezone.utc) - timedelta(days=days_ago)).isoformat()
-
-    async with httpx.AsyncClient() as client:
-        response = await client.get(
-            base_url,
-            params = {
-                "key": settings.OPENCHARGEMAP_API_KEY,
-                "countryCode": "GB",
-                "modifiedsince": since_date,
-                "maxresults": 5000,
-                "compact": "true",
-                "verbose": "false"
-            },
-            timeout = 20.0
-        )
-        response.raise_for_status()
-        data = response.json()
-
-    monthly_counts = defaultdict(int)                # defaultdict(<class 'int'>, {})
-    now_utc = datetime.now(timezone.utc)             # 2025-04-20 18:53:07.717510+00:00
-    timedelta_days_ago = timedelta(days = days_ago)  # 180 days, 0:00:00
-    cutoff_dt = now_utc - timedelta_days_ago         # 2024-10-22 18:57:02.558334+00:00 
-
-    for poi in data:
-        created_str = poi.get("DateCreated")
-        if created_str:
-            try:
-                created_dt = datetime.fromisoformat(created_str.replace("Z", "+00:00"))
-                if created_dt >= cutoff_dt:
-                    month_key = created_dt.strftime("%Y-%m")
-                    # defaultdict(<class 'int'>, {'2025-04': 5})
-                    monthly_counts[month_key] += 1
-            except ValueError:
-                continue
-
-    # Create a list of monthly counts in order
-    counts_list = []
-    for i in reversed(range(months)):
-        month_label = (now_utc - timedelta(days=30 * i)).strftime("%Y-%m")
-        counts_list.append(float(monthly_counts.get(month_label, 0)))
-
-    return counts_list
+    return await fetch_ev_charger_growth_counts(months, max_results=5000)
 
 
 @agent.tool
@@ -128,35 +85,7 @@ async def fetch_metals_prices(
     months: int
 ) -> List[float]:
     """Fetch monthly EOD prices for a metals ETF from Marketstack (real API calls)."""
-    base_url = "https://api.marketstack.com/v2/eod"
-    now_utc = datetime.now(timezone.utc)
-
-    params = {
-        "access_key": settings.MARKETSTACK_API_KEY,
-        "symbols": symbol,
-        "date_from": (now_utc - timedelta(days=months * 30)).strftime("%Y-%m-%d"),
-        "date_to": now_utc.strftime("%Y-%m-%d"),
-        "limit": 200,
-        "sort": "ASC"
-    }
-
-    async with httpx.AsyncClient() as client:
-        response = await client.get(base_url, params=params, timeout=20.0)
-        response.raise_for_status()
-        payload = response.json()
-
-    if not (daily_data := payload.get("data")):
-        raise ValueError(f"No data found for symbol {symbol}")
-    
-    # We want to pick monthly intervals from daily data
-    step = max(1, len(daily_data) // months)
-    results = [daily_data[i]["close"] for i in range(0, len(daily_data), step)][:months]
-
-    # If we don't have enough months, pad with last known price
-    if results and len(results) < months:
-        results += [results[-1]] * (months - len(results))
-
-    return results
+    return await fetch_metals_prices_ind(symbol, months)
 
 
 @agent.output_validator
