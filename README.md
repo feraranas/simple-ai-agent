@@ -1,53 +1,65 @@
 # Simple AI Agent with 2 tools and an output validator
 
-There's a cron job that runs daily 6am CST, it runs the agent which outputs the following correlation analysis between 2 markets: 1) ev charging stations, 2) etf of metals (gold, platinum, etc):
+A Typer CLI that asks a `pydantic-ai` agent (OpenAI `gpt-4o`) to correlate two series over the last few months:
+
+1. New EV charging stations in Great Britain, from Open Charge Map.
+2. Closing prices of a metals ETF (gold, platinum and so on), from Marketstack.
+
+The agent calls one tool per series, computes the correlation and returns a recommendation. An output validator clamps the correlation to [-1, 1]. Each result is appended to `data.csv`.
+
+A GitHub Actions cron job runs the analysis every day at 12:00 UTC (6:00 in Mexico City) and commits the new `data.csv` row:
 
 <p align="center" width=250px>
   <img src="https://github.com/feraranas/simple-ai-agent/blob/main/output.png" />
 </p>
 
-## Obtain API Keys from:
+## API keys
 
-- OPENCHARGEMAP_API_KEY in https://openchargemap.org/site/profile/applications
-- MARKETSTACK_API_KEY = https://marketstack.com/dashboard 
-- OPENAI_API_KEY = https://platform.openai.com/settings/
+Create a `.env` file in the repository root (it is git-ignored) with these keys:
 
-## Setup:
-- python -m .venv venv
-- source .venv/bin/activate
-- pip install -r requirements.txt
+| Variable | Where to get it |
+| --- | --- |
+| `OPENCHARGEMAP_API_KEY` | https://openchargemap.org/site/profile/applications |
+| `MARKETSTACK_API_KEY` | https://marketstack.com/dashboard |
+| `OPENAI_API_KEY` | https://platform.openai.com/settings/ |
 
-## Run:
+All three are required by every command. Set `STORAGE_FILE_PATH` to write results somewhere other than `data.csv`.
 
-1. Execute agents & analysis: ```python main.py ev-charging-growth --months 5 --metals-etf PPLT```
-
-#### informative on the 2 tools the agent uses
-- Fetch EV Charging Status: ```python main.py fetch-ev-charger-growth --months 5```
-- Fetch ETF Metal prices: ```python main.py fetch-etf-metal-prices --months 5 --symbol GLD``` 
-
-
-## Code Overview
-#### This project is laid out as a Typer Python CLI app. This is the repo structure:
+## Setup
 
 ```bash
-ev-charging-growth-cli/
-├── .github/
-│   └── workflows/
-│       └── cron.yml
-│
-├── mycli/
-│   ├── __init__.py
-│   └── jobs/
-│       └── ev_charging_growth.py
-│
-├── tests/
-│   └── integration/
-│       └── test_ev_charging_tools.py
-│
-├── data.csv
-├── settings.py
-├── main.py
-├── requirements.txt
-├── README.md
-└── .env  (not in repo - contains secrets)
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+## Run
+
+Run the agent and append the result to `data.csv`:
+
+```bash
+python main.py ev-charging-growth --months 5 --metals-etf PPLT
+```
+
+The command skips the analysis if `data.csv` already has a row for that ETF today.
+
+Preview what each tool fetches, without the agent and without writing `data.csv`:
+
+```bash
+python main.py fetch-ev-charger-growth --months 5
+python main.py fetch-etf-metal-prices --months 5 --symbol GLD
+```
+
+`fetch-ev-charger-growth` reads only the first 20 stations; the agent tool reads up to 5000.
+
+## Code overview
+
+```text
+.github/workflows/cron.yaml          daily analysis and data.csv commit
+main.py                              Typer CLI entry point
+settings.py                          keys and STORAGE_FILE_PATH (pydantic-settings, .env)
+mycli/jobs/ev_charging_growth.py     agent, its two tools, output validator, CSV append
+mycli/jobs/fetch_ev_charger_growth.py  standalone Open Charge Map fetch
+mycli/jobs/fetch_metal_prices.py     standalone Marketstack fetch
+data.csv                             one row per analysis: timestamp, symbol, correlation, recommendation
 ```
