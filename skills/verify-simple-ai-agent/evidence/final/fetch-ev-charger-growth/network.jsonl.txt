@@ -1,0 +1,1 @@
+{"method": "GET", "host": "api.openchargemap.io", "path": "/v3/poi", "params": {"key": "<redacted>", "countryCode": "GB", "modifiedsince": "2026-05-25T01:53:06.707494+00:00", "maxresults": "20", "compact": "true", "verbose": "false"}, "status": 200}

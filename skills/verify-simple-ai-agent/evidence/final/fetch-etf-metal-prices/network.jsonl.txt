@@ -1,0 +1,1 @@
+{"method": "GET", "host": "api.marketstack.com", "path": "/v2/eod", "params": {"access_key": "<redacted>", "symbols": "GLD", "date_from": "2026-05-25", "date_to": "2026-10-22", "limit": "200", "sort": "ASC"}, "status": 200}

@@ -1,0 +1,1 @@
+agentctl cli -- fetch-ev-charger-growth --months 5
