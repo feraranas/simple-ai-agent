@@ -35,26 +35,40 @@ cli() {
   (cd "$REPO" && env -i HOME="$HOME" PATH="$VENV/bin:/usr/bin:/bin" \
      PYTHONPATH="$SKILL_DIR/scripts/offline" AGENT_VERIFY_NETLOG="$STATE/net.log" \
      OPENCHARGEMAP_API_KEY=verify-dummy MARKETSTACK_API_KEY=verify-dummy OPENAI_API_KEY=verify-dummy \
-     STORAGE_FILE_PATH="$STATE/data.csv" "$VENV/bin/python" main.py "$@")
+     STORAGE_FILE_PATH="$STATE/data.csv" \
+     ${AGENT_VERIFY_FAKE_LLM:+AGENT_VERIFY_FAKE_LLM="$AGENT_VERIFY_FAKE_LLM"} \
+     ${AGENT_VERIFY_FAKE_LLM_CORRELATION:+AGENT_VERIFY_FAKE_LLM_CORRELATION="$AGENT_VERIFY_FAKE_LLM_CORRELATION"} \
+     "$VENV/bin/python" main.py "$@")
 }
 
 journey() {
   local name="$1" E="$EVIDENCE/$1"; mkdir -p "$E"; : > "$STATE/net.log"
   local before; before="$(sha256sum "$REPO/data.csv" | cut -c1-16)"
-  local args
+  local args want_rc=0 want_out="" fake=""
   case "$name" in
-    fetch-ev-charger-growth) args=(fetch-ev-charger-growth --months 5);;
+    fetch-ev-charger-growth) args=(fetch-ev-charger-growth --months 5); want_out="Counts List: \[10.0, 8.0, 6.0, 4.0, 2.0\]";;
     fetch-etf-metal-prices)  args=(fetch-etf-metal-prices --symbol GLD --months 5);;
-    *) die "journeys: fetch-ev-charger-growth | fetch-etf-metal-prices";;
+    etf-empty)               args=(fetch-etf-metal-prices --symbol VERIFY-EMPTY --months 5); want_rc=1; want_out="No data found for symbol VERIFY-EMPTY";;
+    agent-skip-today)        args=(ev-charging-growth --metals-etf PPLT); want_out="already fetched today"
+                             printf '%sT00:00:00+00:00,PPLT,0,x\n' "$(date -u +%F)" > "$STATE/data.csv";;
+    agent-fake-llm)          args=(ev-charging-growth --months 5 --metals-etf PPLT); want_out="Correlation: -1.000"; fake=1
+                             rm -f "$STATE/data.csv";;
+    *) die "journeys: fetch-ev-charger-growth | fetch-etf-metal-prices | etf-empty | agent-skip-today | agent-fake-llm";;
   esac
-  echo "agentctl cli -- ${args[*]}" > "$E/command.txt"
-  set +e; cli -- "${args[@]}" >"$E/stdout.txt" 2>"$E/stderr.txt"; echo $? > "$E/exit-code.txt"; set -e
+  echo "${fake:+AGENT_VERIFY_FAKE_LLM=1 }agentctl cli -- ${args[*]}" > "$E/command.txt"
+  set +e; AGENT_VERIFY_FAKE_LLM="$fake" cli -- "${args[@]}" >"$E/stdout.txt" 2>"$E/stderr.txt"; echo $? > "$E/exit-code.txt"; set -e
   cp "$STATE/net.log" "$E/network.jsonl.txt"
+  [ -f "$STATE/data.csv" ] && cp "$STATE/data.csv" "$E/scratch-data.csv"
   local after; after="$(sha256sum "$REPO/data.csv" | cut -c1-16)"
   echo "data.csv sha256 before=$before after=$after" > "$E/data-csv-unchanged.txt"
-  [ "$(cat "$E/exit-code.txt")" = 0 ] || die "$name exited non-zero; see $E"
+  [ "$(cat "$E/exit-code.txt")" = "$want_rc" ] || die "$name exit $(cat "$E/exit-code.txt"), want $want_rc; see $E"
+  [ -z "$want_out" ] || grep -Eq "$want_out" "$E/stdout.txt" "$E/stderr.txt" || die "$name output lacks /$want_out/; see $E"
   [ "$before" = "$after" ] || die "repo data.csv changed"
   ! grep -q '"status": 599' "$E/network.jsonl.txt" || die "unexpected network host attempted; see $E/network.jsonl.txt"
+  if [ "$name" = agent-fake-llm ]; then
+    [ "$(wc -l < "$STATE/data.csv")" = 1 ] || die "$name: expected one appended row in scratch data.csv"
+    (cd "$REPO" && "$VENV/bin/python" scripts/check_data_csv.py "$STATE/data.csv") > "$E/check-data-csv.txt" || die "$name: appended row fails scripts/check_data_csv.py"
+  fi
   echo "PASS $name evidence=$E"
 }
 

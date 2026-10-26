@@ -6,7 +6,9 @@ Runs a pydantic-ai agent on OpenAI gpt-4o that calls both fetch tools, computes 
 
 - `agent-skip-today` prints `Skipping analysis for <ETF> (already fetched today)` when today's row exists.
 - `agent-run` prints `Analysis Results for <ETF>` with `Correlation:` and `Recommendation:`.
-- `agent-append` appends `timestamp,symbol,correlation,recommendation` to `STORAGE_FILE_PATH`.
+- `agent-tools` the model calls `fetch_ev_charger_growth` (same fetcher as the CLI but `maxresults=5000`) and `fetch_metals_prices`.
+- `agent-clamp` the output validator clamps the correlation to [-1, 1].
+- `agent-append` appends `timestamp,symbol,correlation,recommendation` (UTC ISO timestamp) to `STORAGE_FILE_PATH`.
 
 ## How to get to it (user POV)
 
@@ -16,14 +18,16 @@ Runs a pydantic-ai agent on OpenAI gpt-4o that calls both fetch tools, computes 
 
 Preconditions:
 
-- Launched. For `agent-skip-today`, seed `$STATE/data.csv` with a row dated today (UTC) for `PPLT`.
+- Launched, doctor `OK`.
 
-- **Skip path (offline).** Run `printf '%sT00:00:00+00:00,PPLT,0,x\n' "$(date +%F)" > $STATE/data.csv` (local date, see Gotchas) then `agentctl cli -- ev-charging-growth --metals-etf PPLT`. Exit `0`; stdout has `already fetched today`; `network.jsonl.txt` is empty.
-- **Full run.** Not drivable offline: the shim refuses `api.openai.com` (599). A real run spends OpenAI, Open Charge Map and Marketstack quota and needs real keys.
+- **Skip path.** `agentctl journey agent-skip-today` seeds `$STATE/data.csv` with today's UTC date (`date -u +%F`) for `PPLT`. Observed 2026-10-26: exit `0`, panel `Skipping analysis for PPLT (already fetched today).`, empty network log.
+- **Full run, fake model.** `agentctl journey agent-fake-llm`. Observed 2026-10-26: exit `0`, panel `Analysis Results for PPLT` with `Correlation: -1.000`. The network log shows 4 lines in order: fake turn 1 (`tool_calls: [fetch_ev_charger_growth, fetch_metals_prices]`), Open Charge Map `maxresults=5000`, Marketstack `PPLT`, then fake turn 2 (`final_result`). One row is appended to the scratch CSV, and `check_data_csv.py` reports `OK`.
+- **Clamp.** Run `AGENT_VERIFY_FAKE_LLM=1 AGENT_VERIFY_FAKE_LLM_CORRELATION=1.7 agentctl cli -- ev-charging-growth --metals-etf PPLT` on an empty `$STATE/data.csv`. Observed: `Correlation: 1.000`, CSV value `1.0`.
+- **Failed run.** Plain `agentctl cli -- ev-charging-growth` without the fake: the shim refuses `api.openai.com` (3 POSTs, the OpenAI client's retries). The run ends with `ModelHTTPError: status_code: 599`, **exit `1`**, and no CSV row.
+- **Real run.** Never driven: it spends OpenAI, Open Charge Map and Marketstack quota and needs real keys.
 
 ## Gotchas
 
-- `agent-skip-today` observed 2026-10-21: exit `0`, panel `Skipping analysis for PPLT (already fetched today).`, empty network log. Not captured as committed evidence.
-- Not proved. The full agent run is unverified; only a fake OpenAI server (`OPENAI_BASE_URL`) could make it offline, and none exists yet.
-- `already_fetched_today` compares the row date to local `date.today()`, but rows are written in UTC. Observed: with box TZ UTC-6 in the evening, a row stamped with today's UTC date did not match, and the agent went on to call `api.openai.com` (blocked by the shim: `ModelHTTPError: status_code: 599`, still exit `0`).
-- A failed agent run still exits `0`. Check stdout for `ModelHTTPError`, not the exit code.
+- The fake model is scripted. It proves the tool wiring, validator, panel and CSV append, not what gpt-4o would answer.
+- `already_fetched_today` compares in UTC since #2 (`bf61dd5`), matching the UTC row timestamps. Seed skip rows with `date -u +%F`. `tests/test_already_fetched_today.py` covers the UTC-6 evening case offline.
+- A failed agent run exits non-zero (`1` observed on 2026-10-26). The earlier note that it exits `0` no longer holds.
