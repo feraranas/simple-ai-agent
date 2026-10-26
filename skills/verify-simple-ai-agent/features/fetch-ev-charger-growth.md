@@ -4,8 +4,8 @@ Fetches Open Charge Map POIs for GB and prints a per-month count of chargers cre
 
 ## Sub-features
 
-- `ev-request` sends `GET /v3/poi` with `countryCode=GB`, `modifiedsince`, `maxresults=20`.
-- `ev-bucket` buckets `DateCreated` by `YYYY-MM` and prints `Month: i, Month Label: YYYY-MM` lines.
+- `ev-request` sends `GET /v3/poi` with `countryCode=GB`, `modifiedsince`, `maxresults=20` (the agent tool shares this fetcher with `maxresults=5000`).
+- `ev-bucket` buckets `DateCreated` by `YYYY-MM` and prints, per month, the bare label `YYYY-MM` then `Month: i, Month Label: YYYY-MM`.
 - `ev-counts` prints `Counts List: [...]` oldest month first.
 
 ## How to get to it (user POV)

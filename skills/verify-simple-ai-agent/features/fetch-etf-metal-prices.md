@@ -19,8 +19,8 @@ Preconditions:
 
 - **Fetch.** Run `agentctl journey fetch-etf-metal-prices`. Exit `0`, empty stdout and stderr.
 - **Request.** `network.jsonl.txt` has host `api.marketstack.com`, path `/v2/eod`, `symbols: GLD`, a `date_from`..`date_to` window of about 150 days, status 200.
+- **Empty.** `agentctl journey etf-empty`: the shim returns `{"data": []}` for symbol `VERIFY-EMPTY`. Observed: exit `1`, traceback ending `ValueError: No data found for symbol VERIFY-EMPTY`.
 
 ## Gotchas
 
 - The command prints nothing on success (the list is returned, not printed). Exit code and the request log are the only observable proof.
-- `etf-empty` is mapped but not proved; the shim always returns data.
